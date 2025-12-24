@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  OWNER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  // Relações
+  establishments Establishment[] // Empresas que o usuário é owner
+  logs           Log[]
+
+  employees Employee[] // CORREÇÃO: relação inversa para Employee
+}
+
+model Plan {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?
+  price        Decimal
+  maxEmployees Int?
+  maxProducts  Int?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  // Relação com Establishment
+  establishments Establishment[]
+}
+
+model Establishment {
+  id          Int      @id @default(autoincrement())
+  companyName String
+  fantasyName String
+  cnpj        String   @unique
+  ownerId     String
+  planId      Int
+  createdAt   DateTime @default(now())
+
+  // Relações
+  owner User @relation(fields: [ownerId], references: [id])
+  plan  Plan @relation(fields: [planId], references: [id])
+
+  employees Employee[]
+  products  Product[]
+  recipes   Recipe[]
+  purchases Purchase[]
+}
+
+model Employee {
+  id              String @id @default(uuid())
+  userId          String
+  establishmentId Int
+
+  cpf String @unique
+
+  // Relações
+  user          User          @relation(fields: [userId], references: [id])
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+}
+
+model Product {
+  id              Int      @id @default(autoincrement())
+  establishmentId Int
+  name            String
+  category        String?
+  currentStock    Decimal  @default(0)
+  unit            String?
+  minStock        Decimal  @default(0)
+  unitPrice       Decimal
+  type            String?
+  description     String?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  establishment     Establishment      @relation(fields: [establishmentId], references: [id])
+  recipeIngredients RecipeIngredient[]
+  purchases         Purchase[]
+  lowStockAlerts    LowStockAlert[]
+}
+
+model Recipe {
+  id              Int      @id @default(autoincrement())
+  establishmentId Int
+  name            String
+  prepTime        Int? // em minutos
+  description     String?
+  salePrice       Decimal?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  establishment Establishment      @relation(fields: [establishmentId], references: [id])
+  ingredients   RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id        Int     @id @default(autoincrement())
+  recipeId  Int
+  productId Int
+  quantity  Decimal
+
+  recipe  Recipe  @relation(fields: [recipeId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Purchase {
+  id              Int      @id @default(autoincrement())
+  establishmentId Int
+  purchaseDate    DateTime
+  supplier        String?
+  invoiceNumber   String?
+  productId       Int
+  quantity        Decimal
+  unitPrice       Decimal
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
+}
+
+model LowStockAlert {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  createdAt DateTime @default(now())
+  resolved  Boolean  @default(false)
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  userId    String?
+  action    String
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
