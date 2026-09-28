@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { AdminUser } from "./types";
-import { apiRequest } from "./api";
+import { apiRequest, API_URL } from "./api";
 
 interface AdminAuthContextType {
   adminUser: AdminUser | null;
@@ -9,9 +9,7 @@ interface AdminAuthContextType {
   adminLogout: () => void;
 }
 
-const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
-  undefined,
-);
+const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
@@ -25,15 +23,13 @@ interface AdminAuthProviderProps {
   children: ReactNode;
 }
 
-export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
-  children,
-}) => {
+export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }) => {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
+    // Restaura dados do usuário (sem token – gerenciado pelo cookie HttpOnly)
     const savedUser = localStorage.getItem("@klyver:user");
-    const token = localStorage.getItem("@klyver:token");
-    if (savedUser && token) {
+    if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
         if (parsed.role === "ADMIN") {
@@ -42,22 +38,19 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
             nome: parsed.name || parsed.nome || "Administrador",
             email: parsed.email,
             tipo: "super_admin",
-            token,
+            token: "", // token está no cookie, não aqui
           });
         }
-      } catch (e) {
-        // ignore
+      } catch {
+        localStorage.removeItem("@klyver:user");
       }
     }
   }, []);
 
-  const adminLogin = async (
-    email: string,
-    password: string,
-  ): Promise<boolean> => {
+  const adminLogin = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Backend seta os cookies HttpOnly automaticamente
       const data = await apiRequest<{
-        token: string;
         user: { id: string; name: string; email: string; role: string };
       }>("/auth/login", {
         method: "POST",
@@ -68,7 +61,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
         throw new Error("Acesso negado: Este usuário não é administrador");
       }
 
-      localStorage.setItem("@klyver:token", data.token);
+      // Persiste apenas dados não-sensíveis (o token fica no cookie)
       localStorage.setItem("@klyver:user", JSON.stringify(data.user));
 
       setAdminUser({
@@ -76,7 +69,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
         nome: data.user.name,
         email: data.user.email,
         tipo: "super_admin",
-        token: data.token,
+        token: "",
       });
 
       return true;
@@ -87,9 +80,10 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
   };
 
   const adminLogout = () => {
-    localStorage.removeItem("@klyver:token");
     localStorage.removeItem("@klyver:user");
     setAdminUser(null);
+    // Limpa os cookies no servidor
+    fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
   };
 
   const value: AdminAuthContextType = {

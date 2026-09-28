@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Shield, Eye, EyeOff, Lock, User } from "lucide-react";
-import { useAdminAuth } from "@/lib/admin-auth-context";
+import { Eye, EyeOff, Lock, Mail, Zap } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
-export default function AdminLogin() {
-  const { isAdminAuthenticated, adminLogin } = useAdminAuth();
+export default function Login() {
+  const { isAuthenticated, login, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,9 +17,10 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already authenticated
-  if (isAdminAuthenticated) {
-    return <Navigate to="/admin/dashboard" replace />;
+  // Já autenticado → redireciona
+  if (isAuthenticated) {
+    if (user?.tipo === "admin") return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -29,13 +29,14 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      const success = await adminLogin(email, password);
+      const success = await login(email, password);
       if (success) {
-        navigate("/admin/dashboard");
+        // O auth-context seta o user; após re-render, o Navigate acima redireciona
+        navigate("/dashboard");
       } else {
-        setError("Credenciais inválidas. Tente novamente.");
+        setError("Email ou senha incorretos. Tente novamente.");
       }
-    } catch (err) {
+    } catch {
       setError("Erro interno. Tente novamente mais tarde.");
     } finally {
       setLoading(false);
@@ -45,35 +46,28 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-mesh dark:bg-gradient-mesh-dark p-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
+        {/* Logo */}
+        <div className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="p-4 bg-gradient-to-r from-primary to-accent rounded-2xl shadow-lg">
-              <Shield className="w-12 h-12 text-white" />
+              <Zap className="w-12 h-12 text-white" />
             </div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Painel Administrativo
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Sistema de gestão SaaS - Acesso restrito
-            </p>
+            <h1 className="text-4xl font-extrabold text-foreground tracking-tight">Klyver</h1>
+            <p className="text-muted-foreground mt-1">Gestão inteligente para seu negócio</p>
           </div>
-          <Badge variant="outline" className="border-primary/30 text-primary">
-            Super Admin Required
-          </Badge>
         </div>
 
-        {/* Login Form */}
+        {/* Form */}
         <Card className="glass border-primary/20 shadow-xl">
-          <CardHeader className="space-y-2">
+          <CardHeader>
             <CardTitle className="text-center text-xl text-foreground">
-              Entrar no Sistema
+              Entrar na sua conta
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-5">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -81,17 +75,18 @@ export default function AdminLogin() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email do Administrador</Label>
+                <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@sistema.com"
+                    placeholder="seu@email.com"
                     className="pl-10"
                     required
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -105,9 +100,10 @@ export default function AdminLogin() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Sua senha segura"
+                    placeholder="Sua senha"
                     className="pl-10 pr-10"
                     required
+                    autoComplete="current-password"
                   />
                   <Button
                     type="button"
@@ -115,34 +111,29 @@ export default function AdminLogin() {
                     size="sm"
                     className="absolute right-2 top-2 h-6 w-6 p-0"
                     onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-3 w-3" />
-                    ) : (
-                      <Eye className="h-3 w-3" />
-                    )}
+                    {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </Button>
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                 disabled={loading}
               >
-                {loading ? "Autenticando..." : "Entrar no Painel"}
+                {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-border">
-              <div className="text-center space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Sistema de Gestão Multi-Tenant SaaS
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Acesso restrito a administradores autorizados
-                </p>
-              </div>
+            <div className="mt-6 text-center">
+              <p className="text-xs text-muted-foreground">
+                Acesso administrativo?{" "}
+                <Link to="/admin/login" className="text-primary hover:underline">
+                  Painel Admin
+                </Link>
+              </p>
             </div>
           </CardContent>
         </Card>

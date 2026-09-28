@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { FloatingThemeToggle } from "@/components/ui/floating-theme-toggle";
@@ -9,7 +9,7 @@ export const AppLayout: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Outlet />;
+    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -27,3 +27,4 @@ export const AppLayout: React.FC = () => {
     </div>
   );
 };
+

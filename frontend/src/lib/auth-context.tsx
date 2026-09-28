@@ -30,8 +30,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("@klyver:user");
-    const token = localStorage.getItem("@klyver:token");
-    if (savedUser && token) {
+    if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
         setUser({
@@ -41,9 +40,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           tipo: parsed.role === "ADMIN" ? "admin" : "funcionario",
           cliente_id: parsed.id,
         });
-      } catch (e) {
+      } catch {
         localStorage.removeItem("@klyver:user");
-        localStorage.removeItem("@klyver:token");
       }
     }
   }, []);

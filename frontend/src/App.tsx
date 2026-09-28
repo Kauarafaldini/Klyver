@@ -2,13 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PlaceholderPage } from "@/components/admin/PlaceholderPage";
 import { AuthProvider } from "@/lib/auth-context";
 import { AdminAuthProvider } from "@/lib/admin-auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Recipes from "./pages/Recipes";
@@ -35,6 +36,9 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
+                {/* Rota pública */}
+                <Route path="/login" element={<Login />} />
+
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminLayout />}>
@@ -59,9 +63,10 @@ const App = () => (
                   />
                 </Route>
 
-                {/* Client Routes */}
+                {/* Rotas protegidas (owner/funcionário) */}
                 <Route path="/" element={<AppLayout />}>
-                  <Route index element={<Dashboard />} />
+                  <Route index element={<Navigate to="/login" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
                   <Route path="produtos" element={<Products />} />
                   <Route path="receitas" element={<Recipes />} />
                   <Route path="vendas" element={<Sales />} />
