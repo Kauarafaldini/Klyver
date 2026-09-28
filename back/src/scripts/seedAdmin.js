@@ -4,7 +4,7 @@ import prisma from "../lib/prisma.js";
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL || "admin@klyver.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  const adminPassword = process.env.ADMIN_PASSWORD || "123456";
   const adminName = "Administrador Klyver";
 
   const passwordHash = await bcrypt.hash(adminPassword, 10);
