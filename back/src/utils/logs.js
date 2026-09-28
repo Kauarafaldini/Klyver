@@ -2,7 +2,7 @@ import prisma from "../lib/prisma.js";
 
 export async function createLog(userId, action) {
   try {
-    await prisma.logs.create({
+    await prisma.log.create({
       data: {
         userId,
         action,

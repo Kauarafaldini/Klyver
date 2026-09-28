@@ -1,3 +1,6 @@
+import "dotenv/config";
+import express from "express";
+
 import authRoutes from "./routes/auth.routes.js";
 import adminPlansRoutes from "./routes/admin/plans.routes.js";
 import adminEstablishmentsRoutes from "./routes/admin/establishments.routes.js";
@@ -8,9 +11,6 @@ import purchasesRoutes from "./routes/owner/purchases.routes.js";
 import alertsRoutes from "./routes/owner/alerts.routes.js";
 import adminLogsRoutes from "./routes/admin/logs.routes.js";
 import ownerSummaryRoutes from "./routes/owner/summary.routes.js";
-
-
-import express from "express";
 
 const app = express();
 
@@ -31,6 +31,8 @@ app.get("/", (req, res) => {
   res.send("API rodando 🚀");
 });
 
-app.listen(3000, () => {
-  console.log("Servidor rodando na porta 3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

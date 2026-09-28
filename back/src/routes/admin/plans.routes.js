@@ -57,7 +57,7 @@ router.put("/:id", authenticate, requireAdmin, async (req, res) => {
     const { name, description, price, maxEmployees, maxProducts, active } = req.body;
 
     const plan = await prisma.plan.update({
-      where: { id: Number(id) },
+      where: { id },
       data: { name, description, price, maxEmployees, maxProducts, active },
     });
 
@@ -75,11 +75,11 @@ router.patch("/:id/toggle", authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const plan = await prisma.plan.findUnique({ where: { id: Number(id) } });
+    const plan = await prisma.plan.findUnique({ where: { id } });
     if (!plan) return res.status(404).json({ error: "Plano não encontrado" });
 
     const updatedPlan = await prisma.plan.update({
-      where: { id: Number(id) },
+      where: { id },
       data: { active: !plan.active },
     });
 

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -14,7 +14,7 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String   @unique
   password  String
@@ -24,15 +24,14 @@ model User {
   // Relações
   establishments Establishment[] // Empresas que o usuário é owner
   logs           Log[]
-
-  employees Employee[] // CORREÇÃO: relação inversa para Employee
+  employees      Employee[]
 }
 
 model Plan {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   description  String?
-  price        Decimal
+  price        Float
   maxEmployees Int?
   maxProducts  Int?
   active       Boolean  @default(true)
@@ -43,12 +42,12 @@ model Plan {
 }
 
 model Establishment {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   companyName String
   fantasyName String
   cnpj        String   @unique
-  ownerId     String
-  planId      Int
+  ownerId     String   @db.ObjectId
+  planId      String   @db.ObjectId
   createdAt   DateTime @default(now())
 
   // Relações
@@ -62,9 +61,9 @@ model Establishment {
 }
 
 model Employee {
-  id              String @id @default(uuid())
-  userId          String
-  establishmentId Int
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String @db.ObjectId
+  establishmentId String @db.ObjectId
 
   cpf String @unique
 
@@ -74,14 +73,14 @@ model Employee {
 }
 
 model Product {
-  id              Int      @id @default(autoincrement())
-  establishmentId Int
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  establishmentId String   @db.ObjectId
   name            String
   category        String?
-  currentStock    Decimal  @default(0)
+  currentStock    Float    @default(0)
   unit            String?
-  minStock        Decimal  @default(0)
-  unitPrice       Decimal
+  minStock        Float    @default(0)
+  unitPrice       Float
   type            String?
   description     String?
   createdAt       DateTime @default(now())
@@ -94,12 +93,12 @@ model Product {
 }
 
 model Recipe {
-  id              Int      @id @default(autoincrement())
-  establishmentId Int
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  establishmentId String   @db.ObjectId
   name            String
   prepTime        Int? // em minutos
   description     String?
-  salePrice       Decimal?
+  salePrice       Float?
   createdAt       DateTime @default(now())
 
   // Relações
@@ -108,32 +107,32 @@ model Recipe {
 }
 
 model RecipeIngredient {
-  id        Int     @id @default(autoincrement())
-  recipeId  Int
-  productId Int
-  quantity  Decimal
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  recipeId  String @db.ObjectId
+  productId String @db.ObjectId
+  quantity  Float
 
   recipe  Recipe  @relation(fields: [recipeId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 }
 
 model Purchase {
-  id              Int      @id @default(autoincrement())
-  establishmentId Int
-  purchaseDate    DateTime
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  establishmentId String   @db.ObjectId
+  purchaseDate    DateTime @default(now())
   supplier        String?
   invoiceNumber   String?
-  productId       Int
-  quantity        Decimal
-  unitPrice       Decimal
+  productId       String   @db.ObjectId
+  quantity        Float
+  unitPrice       Float
 
   establishment Establishment @relation(fields: [establishmentId], references: [id])
   product       Product       @relation(fields: [productId], references: [id])
 }
 
 model LowStockAlert {
-  id        Int      @id @default(autoincrement())
-  productId Int
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @db.ObjectId
   createdAt DateTime @default(now())
   resolved  Boolean  @default(false)
 
@@ -141,8 +140,8 @@ model LowStockAlert {
 }
 
 model Log {
-  id        Int      @id @default(autoincrement())
-  userId    String?
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
   action    String
   createdAt DateTime @default(now())
 

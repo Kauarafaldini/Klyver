@@ -11,7 +11,7 @@ function requireAdmin(req, res, next) {
 }
 
 router.get("/", authenticate, requireAdmin, async (req, res) => {
-  const logs = await prisma.logs.findMany({
+  const logs = await prisma.log.findMany({
     include: { user: true },
     orderBy: { createdAt: "desc" },
   });

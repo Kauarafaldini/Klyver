@@ -6,7 +6,7 @@ export async function checkLowStock(productId) {
   if (!product) return;
 
   if (product.currentStock <= product.minStock) {
-    await prisma.low_stock_alerts.create({
+    await prisma.lowStockAlert.create({
       data: { productId },
     });
   }
