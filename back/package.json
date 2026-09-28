@@ -8,6 +8,7 @@
     "build": "prisma generate",
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --forceExit",
     "lint": "eslint"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "@supabase/supabase-js": "^2.86.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
@@ -23,16 +25,28 @@
     "prisma": "^6.19.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.5",
+    "jest": "^30.5.2",
+    "supertest": "^7.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "extensionsToTreatAsEsm": [".js"],
+    "testMatch": ["**/tests/**/*.test.js"]
   }
 }

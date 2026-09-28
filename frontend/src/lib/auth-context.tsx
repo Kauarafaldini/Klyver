@@ -50,15 +50,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // O backend vai setar os cookies HttpOnly automaticamente
       const data = await apiRequest<{
-        token: string;
         user: { id: string; name: string; email: string; role: string };
       }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      localStorage.setItem("@klyver:token", data.token);
+      // Persiste apenas dados não-sensíveis (sem token)
       localStorage.setItem("@klyver:user", JSON.stringify(data.user));
 
       setUser({
@@ -77,10 +77,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("@klyver:token");
+    // Limpa dados locais do usuário
     localStorage.removeItem("@klyver:user");
     setUser(null);
     setCliente(null);
+    // Limpa os cookies no servidor
+    fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
   };
 
   const value: AuthContextType = {

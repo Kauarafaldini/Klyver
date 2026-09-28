@@ -1,13 +1,11 @@
 import { Router } from "express";
 import prisma from "../../lib/prisma.js";
 import { authenticate } from "../../middlewares/auth.js";
+import { requireRole } from "../../middlewares/role.js";
+import logger from "../../utils/logger.js";
 
 const router = Router();
-
-function requireOwner(req, res, next) {
-  if (req.user.role !== "OWNER") return res.status(403).json({ error: "Acesso negado" });
-  next();
-}
+const requireOwner = requireRole("OWNER");
 
 // Registrar compra
 router.post("/", authenticate, requireOwner, async (req, res) => {
@@ -50,8 +48,8 @@ router.post("/", authenticate, requireOwner, async (req, res) => {
 
     return res.status(201).json({ message: "Compra registrada", purchase });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: error.message });
+    logger.error("Erro ao registrar compra", { error: error.message });
+    return res.status(500).json({ error: "Erro interno" });
   }
 });
 

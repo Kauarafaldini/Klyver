@@ -1,16 +1,11 @@
 import { Router } from "express";
 import prisma from "../../lib/prisma.js";
 import { authenticate } from "../../middlewares/auth.js";
+import { requireRole } from "../../middlewares/role.js";
+import logger from "../../utils/logger.js";
 
 const router = Router();
-
-// Middleware que garante que é ADMIN
-function requireAdmin(req, res, next) {
-  if (req.user.role !== "ADMIN") {
-    return res.status(403).json({ error: "Acesso negado" });
-  }
-  next();
-}
+const requireAdmin = requireRole("ADMIN");
 
 /**
  * Listar todos os planos
@@ -43,7 +38,7 @@ router.post("/", authenticate, requireAdmin, async (req, res) => {
 
     return res.status(201).json({ message: "Plano criado com sucesso", plan });
   } catch (error) {
-    console.error(error);
+    logger.error("Erro em rota de planos", { error: error.message });
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -63,7 +58,7 @@ router.put("/:id", authenticate, requireAdmin, async (req, res) => {
 
     return res.json({ message: "Plano atualizado com sucesso", plan });
   } catch (error) {
-    console.error(error);
+    logger.error("Erro em rota de planos", { error: error.message });
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -85,7 +80,7 @@ router.patch("/:id/toggle", authenticate, requireAdmin, async (req, res) => {
 
     return res.json({ message: `Plano ${updatedPlan.active ? "ativado" : "desativado"} com sucesso`, plan: updatedPlan });
   } catch (error) {
-    console.error(error);
+    logger.error("Erro em rota de planos", { error: error.message });
     return res.status(500).json({ error: "Erro interno" });
   }
 });

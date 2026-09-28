@@ -1,17 +1,12 @@
 import { Router } from "express";
 import prisma from "../../lib/prisma.js";
 import { authenticate } from "../../middlewares/auth.js";
+import { requireRole } from "../../middlewares/role.js";
+import logger from "../../utils/logger.js";
 import bcrypt from "bcryptjs";
 
 const router = Router();
-
-// Middleware que verifica se é OWNER
-function requireOwner(req, res, next) {
-  if (req.user.role !== "OWNER") {
-    return res.status(403).json({ error: "Acesso negado" });
-  }
-  next();
-}
+const requireOwner = requireRole("OWNER");
 
 /**
  * Criar funcionário
@@ -70,7 +65,7 @@ router.post("/", authenticate, requireOwner, async (req, res) => {
 
     return res.status(201).json({ message: "Funcionário criado", user });
   } catch (error) {
-    console.error(error);
+    logger.error("Erro ao criar funcionário", { error: error.message });
     return res.status(500).json({ error: "Erro interno" });
   }
 });

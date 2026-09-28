@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
+import logger from "../utils/logger.js";
 
 const router = Router();
 
@@ -26,24 +27,60 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Credenciais inválidas" });
   }
 
-  const token = jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-    },
+  // Access token (short‑lived)
+  const accessToken = jwt.sign(
+    { id: user.id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+    { expiresIn: "15m" }
   );
 
+  // Refresh token (long‑lived)
+  const refreshToken = jwt.sign(
+    { id: user.id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  // Set HttpOnly cookies
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+  res.cookie("refreshToken", refreshToken, cookieOptions);
+  // Access token can be short‑lived cookie or returned; we return it for convenience
+  res.cookie("accessToken", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+
   return res.json({
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
   });
+});
+
+// Refresh token endpoint
+router.post("/refresh", async (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) {
+    return res.status(401).json({ error: "Refresh token missing" });
+  }
+  try {
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    // Issue new access token
+    const newAccess = jwt.sign(
+      { id: payload.id, role: payload.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+    res.cookie("accessToken", newAccess, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid refresh token" });
+  }
 });
 
 router.post("/register", async (req, res) => {
@@ -81,9 +118,16 @@ router.post("/register", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Erro interno ao registrar usuário', error);
     return res.status(500).json({ error: "Erro interno" });
   }
+});
+
+// Logout – remove os cookies no servidor
+router.post("/logout", (req, res) => {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return res.json({ message: "Logout realizado com sucesso" });
 });
 
 export default router;

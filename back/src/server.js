@@ -1,6 +1,10 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "../swagger.js";
+import logger from "./utils/logger.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import adminPlansRoutes from "./routes/admin/plans.routes.js";
@@ -15,8 +19,9 @@ import ownerSummaryRoutes from "./routes/owner/summary.routes.js";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 app.use("/admin/plans", adminPlansRoutes);
@@ -29,12 +34,19 @@ app.use("/owner/alerts", alertsRoutes);
 app.use("/admin/logs", adminLogsRoutes);
 app.use("/owner", ownerSummaryRoutes);
 
+// Swagger UI – documentação automática (somente em não-produção)
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.get("/", (req, res) => {
   res.send("API rodando 🚀");
 });
 
-const PORT = process.env.PORT || 3000;
+export default app;
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+// Só sobe o servidor quando não estiver em modo de teste
+if (process.env.NODE_ENV !== "test") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    logger.info(`Servidor rodando na porta ${PORT}`);
+  });
+}
